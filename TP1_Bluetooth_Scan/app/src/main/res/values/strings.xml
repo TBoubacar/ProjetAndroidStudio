@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">TP1_Bluetooth_Scan</string>
+    <string name="bluetoothItemName">Name of device</string>
+    <string name="bluetoothItemAdress">Address of device</string>
+    <string name="bluetoothActifBtn">START DISCOVERY</string>
+    <string name="bluetoothUnactifBtn">CANCEL DISCOVERY</string>
+</resources>
