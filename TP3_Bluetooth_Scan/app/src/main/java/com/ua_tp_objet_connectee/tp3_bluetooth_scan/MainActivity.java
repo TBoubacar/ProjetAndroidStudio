@@ -6,13 +6,18 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -20,6 +25,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.ua_tp_objet_connectee.tp3_bluetooth_scan.adapter.MyListViewAdapter;
+import com.ua_tp_objet_connectee.tp3_bluetooth_scan.model.BluetoothLeService;
 import com.ua_tp_objet_connectee.tp3_bluetooth_scan.model.MyListViewItem;
 
 import java.util.logging.Logger;
@@ -28,11 +34,14 @@ public class MainActivity extends AppCompatActivity {
 
     private static Logger MY_LOGGER = Logger.getLogger(MainActivity.class.getName());
     private final Context mainActivityContext = this;
-
     private static final int REQUEST_ENABLE_BT = 1;
     private static MyListViewAdapter myListViewAdapter;
     private static Button actifBluetooth;
     private static Button unactifBluetooth;
+    public static Button disconnect_btn;
+    public static TextView deviceConnectedName;
+    public static TextView deviceConnectedInfo;
+
     private BluetoothAdapter bluetoothAdapter;
     private ListView bluetoothList;
     // Stops scanning after 10 seconds.
@@ -43,7 +52,9 @@ public class MainActivity extends AppCompatActivity {
     private Handler handler;
     private boolean scanning;
     // Connexio to the server GATT
-    private BluetoothGatt bluetoothGatt;
+    private BluetoothLeService bluetoothService;
+    private ServiceConnection serviceConnection;
+    private String deviceAddress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,9 +64,13 @@ public class MainActivity extends AppCompatActivity {
 
         actifBluetooth = (Button) findViewById(R.id.start_btn);
         unactifBluetooth = (Button) findViewById(R.id.stop_btn);
+        disconnect_btn = (Button) findViewById(R.id.disconnect_btn);
+        deviceConnectedName = (TextView) findViewById(R.id.deviceConnectedId);
+        deviceConnectedInfo = (TextView) findViewById(R.id.deviceConnectedInfoId);
 
         actifBluetooth.setOnClickListener(view -> actionToDoWhenBluetoothIsActif());
         unactifBluetooth.setOnClickListener(view -> actionToDoWhenBluetoothIsUnactif());
+        disconnect_btn.setOnClickListener(view -> actionToDoWhenDeviceIsDisconnected());
 
         myListViewAdapter = new MyListViewAdapter(this);
         bluetoothList = findViewById(R.id.bluetoothListView);
@@ -90,6 +105,62 @@ public class MainActivity extends AppCompatActivity {
         };
         handler = new Handler();
         scanning = false;
+
+        bluetoothService = new BluetoothLeService(this);
+        serviceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                String msg = "__________Bluetooth Service is started__________";
+                MY_LOGGER.info(msg);
+
+                bluetoothService = ((BluetoothLeService.LocalBinder) service).getService();
+                if (!bluetoothService.initialize()) {
+                    msg = "__________Bluetooth Service is not initialize__________";
+                    MY_LOGGER.info(msg);
+                    Toast.makeText(mainActivityContext, msg, Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+                if (bluetoothService != null) {
+                    Boolean status = bluetoothService.connect(deviceAddress);
+                    if (status) {
+                        msg = "__________Bluetooth Device is connected__________";
+                        MY_LOGGER.info(msg);
+                    } else {
+                        msg = "__________Bluetooth Device is not connected with provided address (" + deviceAddress + ")__________";
+                        MY_LOGGER.info(msg);
+                    }
+                }
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                bluetoothService.disconnect();
+                String msg = "__________Bluetooth Service is ended__________";
+                MY_LOGGER.info(msg);
+            }
+        };
+        Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+        bindService(gattServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        MY_LOGGER.info("________{onStart}________");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        MY_LOGGER.info("________{onStop}________");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        bluetoothService.disconnect();
+        bluetoothService.close();
+        System.exit(0);
     }
 
     @Override
@@ -101,21 +172,8 @@ public class MainActivity extends AppCompatActivity {
             MY_LOGGER.info(msg);
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
             bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
+            finish();
         }
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-        MY_LOGGER.info("________{onStart}________");
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-
-        MY_LOGGER.info("________{onStop}________");
     }
 
     public void actionToDoWhenBluetoothIsActif() {
@@ -146,6 +204,18 @@ public class MainActivity extends AppCompatActivity {
         } else {
             this.scanLeDevice(this);
         }
+    }
+
+    public void actionToDoWhenDeviceIsConnected(View view) {
+        final Intent intentFilter = new Intent(String.valueOf(BluetoothGatt.STATE_CONNECTED));
+        TextView bluetoothItemAddress = (TextView) view.findViewById(R.id.bluetoothItemAdress);
+
+        deviceAddress = (String) bluetoothItemAddress.getText();
+        serviceConnection.onServiceConnected(ComponentName.unflattenFromString(""), bluetoothService.onBind(intentFilter));
+    }
+
+    public void actionToDoWhenDeviceIsDisconnected() {
+        serviceConnection.onServiceDisconnected(ComponentName.unflattenFromString(""));
     }
 
     private void scanLeDevice(Context context) {
