@@ -12,7 +12,7 @@
         android:id="@+id/bluetoothIcon"
         android:layout_width="150dp"
         android:layout_height="wrap_content"
-        android:layout_marginRight="50dp"
+        android:layout_marginEnd="50dp"
         android:layout_weight="0"
         android:contentDescription="@string/app_name"
         app:srcCompat="@android:drawable/stat_sys_data_bluetooth" />
@@ -25,9 +25,9 @@
         android:text="@string/bluetoothItemName" />
 
     <TextView
-        android:id="@+id/bluetoothItemAdress"
+        android:id="@+id/bluetoothItemAddress"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="@string/bluetoothItemAdress" />
+        android:text="@string/bluetoothItemAddress" />
 </LinearLayout>

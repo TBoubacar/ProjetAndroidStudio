@@ -14,9 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MyListViewAdapter extends ArrayAdapter<MyListViewItem> {
-    private List<MyListViewItem> myListViewItemList;    //  ASTUCE : POUR EVITER D'AVOIR DES DOUBLONS DANS NOTRE LISTE DE BLUETOOTH
-    private LayoutInflater inflater;
-    private Context context;
+
+    private final List<MyListViewItem> myListViewItemList;    //  TIP : TO AVOID HAVING DUPLICATE IN OUR BLUETOOTH LIST
+    private final LayoutInflater inflater;
+    private final Context context;
 
     public MyListViewAdapter(Context context) {
         super(context, R.layout.list_view_item);
@@ -25,7 +26,7 @@ public class MyListViewAdapter extends ArrayAdapter<MyListViewItem> {
         this.myListViewItemList = new ArrayList<>();
     }
 
-    //  ASTUCE : POUR EVITER D'AVOIR DES DOUBLONS DANS NOTRE LISTE DE BLUETOOTH
+    //  TIP : TO AVOID HAVING DUPLICATE IN OUR BLUETOOTH LIST
     public boolean isStillOnMyItemList(MyListViewItem item) {
         for(MyListViewItem myItem : myListViewItemList) {
             if (myItem.getName().equals(item.getName()) && myItem.getAddress().equals(item.getAddress())) {
@@ -35,8 +36,8 @@ public class MyListViewAdapter extends ArrayAdapter<MyListViewItem> {
         return false;
     }
 
+    //  TIP : TO AVOID HAVING DUPLICATE IN OUR BLUETOOTH LIST
     public void addItem(MyListViewItem item) {
-        //  ASTUCE : POUR EVITER D'AVOIR DES DOUBLONS DANS NOTRE LISTE DE BLUETOOTH
         if (! this.isStillOnMyItemList(item)) {
             this.myListViewItemList.add(item);
             this.add(item);
@@ -45,18 +46,6 @@ public class MyListViewAdapter extends ArrayAdapter<MyListViewItem> {
 
     public Context getContext() {
         return context;
-    }
-
-    public void setContext(Context context) {
-        this.context = context;
-    }
-
-    public List<MyListViewItem> getMyListViewItemList() {
-        return myListViewItemList;
-    }
-
-    public void setMyListViewItemList(List<MyListViewItem> myListViewItemList) {
-        this.myListViewItemList = myListViewItemList;
     }
 
     @Override
@@ -81,8 +70,8 @@ public class MyListViewAdapter extends ArrayAdapter<MyListViewItem> {
 
         TextView bluetoothItemName = view.findViewById(R.id.bluetoothItemName);
         bluetoothItemName.setText(item.getName());
-        TextView bluetoothItemAdress = view.findViewById(R.id.bluetoothItemAdress);
-        bluetoothItemAdress.setText(item.getAddress());
+        TextView bluetoothItemAddress = view.findViewById(R.id.bluetoothItemAddress);
+        bluetoothItemAddress.setText(item.getAddress());
 
         return view;
     }

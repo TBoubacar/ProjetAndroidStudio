@@ -1,10 +1,10 @@
 <resources>
     <string name="app_name">TP3_Bluetooth_Scan</string>
     <string name="bluetoothItemName">Name of device</string>
-    <string name="bluetoothItemAdress">Address of device</string>
-    <string name="bluetoothUnactifBtn">CANCEL DISCOVERY</string>
-    <string name="bluetoothActifBtn">START DISCOVERY</string>
+    <string name="bluetoothItemAddress">Address of device</string>
+    <string name="bluetoothUnactivatedBtn">CANCEL DISCOVERY</string>
+    <string name="bluetoothActivatedBtn">START DISCOVERY</string>
     <string name="deviceDisconnectBtn">DISCONNECT</string>
-    <string name="deviceDisconnectedInfo"></string>
-    <string name="deviceConnected"></string>
+    <string name="deviceDisconnectedInfo" />
+    <string name="deviceConnected" />
 </resources>

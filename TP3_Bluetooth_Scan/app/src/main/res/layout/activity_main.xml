@@ -11,14 +11,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:enabled="true"
-        android:text="@string/bluetoothActifBtn" />
+        android:text="@string/bluetoothActivatedBtn" />
 
     <Button
         android:id="@+id/stop_btn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:enabled="false"
-        android:text="@string/bluetoothUnactifBtn" />
+        android:text="@string/bluetoothUnactivatedBtn" />
 
     <LinearLayout
         android:layout_width="match_parent"
