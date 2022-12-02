@@ -11,7 +11,9 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Message;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -19,8 +21,6 @@ import androidx.core.app.ActivityCompat;
 
 import com.ua_tp_objet_connectee.tp3_bluetooth_scan.MainActivity;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -29,8 +29,6 @@ public class BluetoothLeService extends Service {
     private static Logger MY_LOGGER = Logger.getLogger(BluetoothLeService.class.getName());
     private MainActivity mainActivity;
     private BluetoothGattCallback bluetoothGattCallback;
-    private final static int STATE_DISCONNECTED = 0;
-    private final static int STATE_CONNECTED = 2;
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothGatt bluetoothGatt;
     private Binder binder;
@@ -43,7 +41,7 @@ public class BluetoothLeService extends Service {
         this.bluetoothGattCallback = new BluetoothGattCallback() {
             @Override
             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-                if (newState == BluetoothLeService.STATE_CONNECTED) {
+                if (newState == BluetoothGatt.STATE_CONNECTED) {
                     String msg = "_________Successfully connected to the GATT Server_________";
                     MY_LOGGER.info(msg);
 
@@ -58,11 +56,34 @@ public class BluetoothLeService extends Service {
                     }
 
                     bluetoothGatt.discoverServices();
-                } else if (newState == BluetoothLeService.STATE_DISCONNECTED) {
-                    String msg = "_________Disconnected from the GATT Server_________";
+                    this.onServicesDiscovered(bluetoothGatt, BluetoothGatt.STATE_CONNECTED);
+                } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
+                    String msg = "_________GATT Server is disconnected_________";
                     MY_LOGGER.info(msg);
                 }
             }
+
+            @Override
+            public void onServicesDiscovered(BluetoothGatt bluetoothGatt, int status) {
+                if (mainActivity != null) {
+                    if (status == BluetoothGatt.STATE_CONNECTED) {
+                        if (ActivityCompat.checkSelfPermission(mainActivity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                            // TODO: Consider calling
+                            //    ActivityCompat#requestPermissions
+                            // here to request the missing permissions, and then overriding
+                            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                            //                                          int[] grantResults)
+                            // to handle the case where the user grants the permission. See the documentation
+                            // for ActivityCompat#requestPermissions for more details.
+                        };
+                        displayGattServices();
+
+                        String msg = "\t_________Bluetooth Device (" + bluetoothGatt.getDevice().getName() + ") is connected successfuly_________";
+                        MY_LOGGER.info(msg);
+                    }
+                }
+            }
+
         };
         this.initialize();
     }
@@ -82,27 +103,34 @@ public class BluetoothLeService extends Service {
         return super.onUnbind(intent);
     }
 
-    public void onServicesDiscovered(BluetoothGatt bluetoothGatt, int status) {
-        if (status == BluetoothGatt.GATT_SUCCESS) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-            }
-            mainActivity.disconnect_btn.setEnabled(true);
-            mainActivity.deviceConnectedName.setText(bluetoothGatt.getDevice().getName() + " (" + bluetoothGatt.getDevice().getAddress() + ")");
-            displayGattServices();
-
-            String msg = "_________Bluetooth Device (" + bluetoothGatt.getDevice().getName() + ") is connected successfuly_________";
-            Toast.makeText(mainActivity, msg, Toast.LENGTH_SHORT).show();
-        } else {
-            String msg = "_________Bluetooth Device (" + bluetoothGatt.getDevice().getName() + ") is connected successfuly_________";
-            Toast.makeText(mainActivity, msg, Toast.LENGTH_SHORT).show();
+    public void displayGattServices() {
+        if (ActivityCompat.checkSelfPermission(mainActivity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
         }
+        String infoGattService = "Informations : \n";
+        for (BluetoothGattService gattService : this.getSupportedGattServices()) {
+            infoGattService += "New Service : " + gattService.getUuid().toString() + " = " + Sample_gatt_attributes.lookup(gattService.getUuid().toString(), bluetoothGatt.getDevice().getName());
+
+            // Loops through available Characteristics.
+            for (BluetoothGattCharacteristic gattCharacteristic : gattService.getCharacteristics()) {
+                infoGattService += "\tNew Characteristics : " + gattCharacteristic.getUuid().toString() + " = " + Sample_gatt_attributes.lookup(gattService.getUuid().toString(), "default");
+            }
+        }
+        MY_LOGGER.info(infoGattService);
+
+        Message message = mainActivity.handler.obtainMessage();
+        Bundle bundle = new Bundle();
+        bundle.putString("disconnect_btn", "true");
+        bundle.putString("deviceName", bluetoothGatt.getDevice().getName() + " (" + bluetoothGatt.getDevice().getAddress() + ")");
+        bundle.putString("infoGattService", infoGattService);
+        message.setData(bundle);
+        mainActivity.handler.sendMessage(message);
     }
 
     public boolean initialize() {
@@ -145,57 +173,25 @@ public class BluetoothLeService extends Service {
     }
 
     public void disconnect() {
-        if (bluetoothAdapter == null || bluetoothGatt == null) {
-            MY_LOGGER.info("__________BluetoothAdapter not initialized__________");
-            return;
-        }
-        if (ActivityCompat.checkSelfPermission(mainActivity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-        }
-        mainActivity.disconnect_btn.setEnabled(false);
-        mainActivity.deviceConnectedName.setText(null);
-        mainActivity.deviceConnectedInfo.setText(null);
-        bluetoothGatt.disconnect();
-    }
-
-    public void displayGattServices() {
-        if (ActivityCompat.checkSelfPermission(mainActivity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-        }
-        String infoGattService = "";
-        for (BluetoothGattService gattService : this.getSupportedGattServices()) {
-            infoGattService += "New Service : " + Sample_gatt_attributes.lookup(gattService.getUuid().toString(), bluetoothGatt.getDevice().getName());
-
-            List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
-            ArrayList<BluetoothGattCharacteristic> charas = new ArrayList<BluetoothGattCharacteristic>();
-
-            // Loops through available Characteristics.
-            for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
-                charas.add(gattCharacteristic);
-                HashMap<String, String> currentCharaData = new HashMap<String, String>();
-
-                currentCharaData.put("LIST_NAME", Sample_gatt_attributes.lookup(gattService.getUuid().toString(), "unknownCharaString"));
-                currentCharaData.put("LIST_UUID", gattService.getUuid().toString());
+        if (mainActivity != null) {
+            if (bluetoothAdapter == null || bluetoothGatt == null) {
+                MY_LOGGER.info("__________BluetoothAdapter not initialized__________");
+                return;
             }
+            if (ActivityCompat.checkSelfPermission(mainActivity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+            }
+            mainActivity.disconnect_btn.setEnabled(false);
+            mainActivity.deviceConnectedName.setText("");
+            mainActivity.deviceConnectedInfo.setText("");
+            bluetoothGatt.disconnect();
         }
-
-                String infoDevice = "Address of device : " + bluetoothGatt.getDevice().getAddress() + "\n" +
-                "Name of device : " + bluetoothGatt.getDevice().getName() + "\n" +
-                "Bluetooth Class : " + bluetoothGatt.getDevice().getBluetoothClass() + "\n" +
-                "Type of device : " + bluetoothGatt.getDevice().getType() + "\n";
-        mainActivity.deviceConnectedInfo.setText(infoDevice);
     }
 
     public List<BluetoothGattService> getSupportedGattServices() {
