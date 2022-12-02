@@ -40,7 +40,6 @@ public class MyListViewAdapter extends ArrayAdapter<MyListViewItem> {
         if (! this.isStillOnMyItemList(item)) {
             this.myListViewItemList.add(item);
             this.add(item);
-            this.notifyDataSetChanged();
         }
     }
 

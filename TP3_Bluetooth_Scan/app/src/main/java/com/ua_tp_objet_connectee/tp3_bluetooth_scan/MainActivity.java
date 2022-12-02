@@ -1,6 +1,7 @@
 package com.ua_tp_objet_connectee.tp3_bluetooth_scan;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.le.BluetoothLeScanner;
@@ -14,12 +15,14 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -49,13 +52,13 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothLeScanner bluetoothLeScanner;
     // Device scan callback.
     private ScanCallback leScanCallback;
-    private Handler handler;
+    public Handler handler;
     private boolean scanning;
     // Connexio to the server GATT
     private BluetoothLeService bluetoothService;
     private ServiceConnection serviceConnection;
     private String deviceAddress;
-
+    @SuppressLint("HandlerLeak")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -103,40 +106,41 @@ public class MainActivity extends AppCompatActivity {
                 myListViewAdapter.addItem(new MyListViewItem(name, address));
             }
         };
-        handler = new Handler();
+        handler = new Handler() {
+            @SuppressLint("HandlerLeak")
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                super.handleMessage(msg);
+                Bundle bundle = msg.getData();
+                @SuppressLint("HandlerLeak") String disconnect_btn_bool = bundle.getString("disconnect_btn");
+                @SuppressLint("HandlerLeak") String nameOfDevice = bundle.getString("deviceName");
+                @SuppressLint("HandlerLeak") String infoGattService = bundle.getString("infoGattService");
+                if (disconnect_btn_bool.equals("true")) {
+                    disconnect_btn.setEnabled(true);
+                    deviceConnectedName.setText(nameOfDevice);
+                    deviceConnectedInfo.setText(infoGattService);
+                }
+
+            }
+        };
         scanning = false;
 
         bluetoothService = new BluetoothLeService(this);
         serviceConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
-                String msg = "__________Bluetooth Service is started__________";
-                MY_LOGGER.info(msg);
-
                 bluetoothService = ((BluetoothLeService.LocalBinder) service).getService();
                 if (!bluetoothService.initialize()) {
-                    msg = "__________Bluetooth Service is not initialize__________";
-                    MY_LOGGER.info(msg);
-                    Toast.makeText(mainActivityContext, msg, Toast.LENGTH_SHORT).show();
                     finish();
                 }
                 if (bluetoothService != null) {
                     Boolean status = bluetoothService.connect(deviceAddress);
-                    if (status) {
-                        msg = "__________Bluetooth Device is connected__________";
-                        MY_LOGGER.info(msg);
-                    } else {
-                        msg = "__________Bluetooth Device is not connected with provided address (" + deviceAddress + ")__________";
-                        MY_LOGGER.info(msg);
-                    }
                 }
             }
 
             @Override
             public void onServiceDisconnected(ComponentName name) {
                 bluetoothService.disconnect();
-                String msg = "__________Bluetooth Service is ended__________";
-                MY_LOGGER.info(msg);
             }
         };
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
