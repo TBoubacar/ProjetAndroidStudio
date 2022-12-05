@@ -2,8 +2,8 @@ package com.ua_tp_objet_connectee.tp3_bluetooth_scan.model;
 
 public class MyListViewItem {
 
-    private final String name;
-    private final String address;
+    private String name;
+    private String address;
 
     public MyListViewItem(String name, String address) {
         this.name = name;
@@ -16,6 +16,14 @@ public class MyListViewItem {
 
     public String getAddress() {
         return address;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 
 }

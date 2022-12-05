@@ -1,5 +1,6 @@
 package com.ua_tp_objet_connectee.tp3_bluetooth_scan.adapter;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -63,6 +64,7 @@ public class MyListViewAdapter extends ArrayAdapter<MyListViewItem> {
         return 0;
     }
 
+    @SuppressLint({"ViewHolder", "InflateParams"})
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
         view = inflater.inflate(R.layout.list_view_item, null);
