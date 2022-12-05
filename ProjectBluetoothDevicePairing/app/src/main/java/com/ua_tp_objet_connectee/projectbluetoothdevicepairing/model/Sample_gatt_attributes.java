@@ -28,7 +28,7 @@ public class Sample_gatt_attributes {
 
     private static HashMap<String, String> attributes = new HashMap<String, String>();
     public static String HEART_RATE_MEASUREMENT = "00002a37-0000-1000-8000-00805f9b34fb";
-    public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
+    // --Commented out by Inspection (05/12/2022 23:35):public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
 
     static {
         // Sample Services.

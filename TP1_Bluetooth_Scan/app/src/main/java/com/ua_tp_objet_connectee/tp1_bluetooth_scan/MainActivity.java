@@ -166,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    /*__________________________CLASS EXTERNE__________________________*/
+    /*__________________________CLASS EXTERN__________________________*/
     public static class MyBroadCastReceiver extends BroadcastReceiver {
         public MyBroadCastReceiver() {
             super();

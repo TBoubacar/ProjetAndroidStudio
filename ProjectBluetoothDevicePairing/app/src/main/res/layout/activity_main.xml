@@ -6,6 +6,14 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
+    <Switch
+        android:id="@+id/bluetoothTypeId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:text="@string/bluetoothTypeName"
+        tools:ignore="UseSwitchCompatOrMaterialXml" />
+
     <Button
         android:id="@+id/start_btn"
         android:layout_width="match_parent"
@@ -50,7 +58,7 @@
 
         <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="85dp">
+            android:layout_height="75dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -61,8 +69,7 @@
                     android:id="@+id/deviceConnectedInfoId"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:text="@string/deviceDisconnectedInfo"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+                    android:text="@string/deviceDisconnectedInfo" />
             </LinearLayout>
         </ScrollView>
 

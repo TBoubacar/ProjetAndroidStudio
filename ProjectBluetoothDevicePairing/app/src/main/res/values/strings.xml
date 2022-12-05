@@ -7,4 +7,5 @@
     <string name="deviceDisconnectBtn">DISCONNECT</string>
     <string name="deviceDisconnectedInfo" />
     <string name="deviceConnected" />
+    <string name="bluetoothTypeName">Bluetooth 4.0</string>
 </resources>
