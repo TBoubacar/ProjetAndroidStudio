@@ -59,10 +59,11 @@ public class MainActivity extends AppCompatActivity {
     private Handler handler;
 
     // Property : Use for Connection to the server GATT
+    private MyBluetoothGattCallback myBluetoothGattCallback;
     private BluetoothGatt bluetoothGattConnected;
-    private String deviceName;
-    private boolean connected;
+    private MyListViewItem bluetoothInfo;
 
+    @SuppressLint("HandlerLeak")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,11 +72,11 @@ public class MainActivity extends AppCompatActivity {
 
         ListView bluetoothList = findViewById(R.id.bluetoothListView);
 
-        activatedBluetoothScanningBtn = (Button) findViewById(R.id.start_btn);
-        unactivatedBluetoothScanningBtn = (Button) findViewById(R.id.stop_btn);
-        disconnect_btn = (Button) findViewById(R.id.disconnect_btn);
-        deviceConnectedName = (TextView) findViewById(R.id.deviceConnectedId);
-        deviceConnectedInfo = (TextView) findViewById(R.id.deviceConnectedInfoId);
+        activatedBluetoothScanningBtn = findViewById(R.id.start_btn);
+        unactivatedBluetoothScanningBtn = findViewById(R.id.stop_btn);
+        disconnect_btn = findViewById(R.id.disconnect_btn);
+        deviceConnectedName = findViewById(R.id.deviceConnectedId);
+        deviceConnectedInfo = findViewById(R.id.deviceConnectedInfoId);
 
         activatedBluetoothScanningBtn.setOnClickListener(view -> actionToDoToStartScanning());
         unactivatedBluetoothScanningBtn.setOnClickListener(view -> actionToDoToStopScanning());
@@ -98,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
                     //                                          int[] grantResults)
                     // to handle the case where the user grants the permission. See the documentation
                     // for ActivityCompat#requestPermissions for more details.
-                    MY_LOGGER.info("We Do Nothing");
+                    MY_LOGGER.info("");
                 }
                 String name = result.getDevice().getName();
                 String address = result.getDevice().getAddress();
@@ -112,34 +113,45 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        scanning = false;
-        connected = false;
-    }
-
-    @SuppressLint("HandlerLeak")
-    @Override
-    protected void onStart() {
-        super.onStart();
         handler = new Handler() {
             @Override
             public void handleMessage(@NonNull Message msg) {
                 super.handleMessage(msg);
-
-                Bundle bundle = msg.getData();
-                String infoGattService = bundle.getString("infoGattService");
-                deviceName = bundle.getString("deviceName");
-
-                if (connected) {
-                    disconnect_btn.setEnabled(true);
-                    deviceConnectedName.setText(deviceName);
-                    deviceConnectedInfo.setText(infoGattService);
-
-                    String msgToDisplay = "_________Bluetooth Device '" + deviceName + "' is connected successfully_________";
-                    MY_LOGGER.info(msgToDisplay);
-                    Toast.makeText(MainActivity.this, msgToDisplay, Toast.LENGTH_LONG).show();
+                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    MY_LOGGER.info("");
                 }
+                Bundle bundle = msg.getData();
+                bluetoothInfo.setName(bundle.getString("deviceName"));
+                String disconnectedBtn = bundle.getString("disconnectedBtn");
+                String infoGattService = bundle.getString("infoGattService");
+                if (bluetoothGattConnected != null && bluetoothGattConnected.connect()) {
+                    disconnect_btn.setEnabled(true);
+                    deviceConnectedName.setText(bluetoothInfo.getName());
+                    deviceConnectedInfo.setText(infoGattService);
+                }
+                if (disconnectedBtn != null && disconnectedBtn.equals("false")) {
+                    disconnect_btn.setEnabled(false);
+                    deviceConnectedName.setText(bluetoothInfo.getName());
+                    deviceConnectedInfo.setText(infoGattService);
+                }
+
             }
         };
+        myBluetoothGattCallback = new MyBluetoothGattCallback(this);
+        this.scanning = false;
+        this.bluetoothInfo = new MyListViewItem("","");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
         MY_LOGGER.info("________{onStart}________");
     }
 
@@ -167,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
             MY_LOGGER.info(msg);
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
             bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
-            finish();
+            this.scanLeDevice(this);
         }
     }
 
@@ -200,9 +212,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void actionToDoWhenDeviceIsConnected(View view) {
-        TextView bluetoothItemAddress = (TextView) view.findViewById(R.id.bluetoothItemAddress);
-        String deviceAddress = (String) bluetoothItemAddress.getText();
-        this.connect(deviceAddress);
+        TextView bluetoothItemAddress = view.findViewById(R.id.bluetoothItemAddress);
+        this.bluetoothInfo.setAddress((String) bluetoothItemAddress.getText());
+        this.connect(this.bluetoothInfo.getAddress());
     }
 
     public void actionToDoWhenDeviceIsDisconnected() {
@@ -211,7 +223,7 @@ public class MainActivity extends AppCompatActivity {
         deviceConnectedInfo.setText(null);
         this.disconnect();
 
-        String msg = "_________Bluetooth Device (" + deviceName + ") is disconnected successfully_________";
+        String msg = "_________Bluetooth Device (" + this.bluetoothInfo.getName() + ") is disconnected successfully_________";
         MY_LOGGER.info(msg);
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
     }
@@ -233,7 +245,7 @@ public class MainActivity extends AppCompatActivity {
                         //                                          int[] grantResults)
                         // to handle the case where the user grants the permission. See the documentation
                         // for ActivityCompat#requestPermissions for more details.
-                        MY_LOGGER.info("We Do Nothing");
+                        MY_LOGGER.info("");
                     }
                     scanning = false;
                     bluetoothLeScanner.stopScan(leScanCallback);
@@ -250,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
                     //                                          int[] grantResults)
                     // to handle the case where the user grants the permission. See the documentation
                     // for ActivityCompat#requestPermissions for more details.
-                    MY_LOGGER.info("We Do Nothing");
+                    MY_LOGGER.info("");
                 }
                 activatedBluetoothScanningBtn.setEnabled(false);
                 unactivatedBluetoothScanningBtn.setEnabled(true);
@@ -282,10 +294,7 @@ public class MainActivity extends AppCompatActivity {
             // for ActivityCompat#requestPermissions for more details.
             MY_LOGGER.info("We Do Nothing");
         }
-        MyBluetoothGattCallback myBluetoothGattCallback = new MyBluetoothGattCallback(this);
-        bluetoothGattConnected = device.connectGatt(this, false, myBluetoothGattCallback);
-        //myBluetoothGattCallback.onServicesDiscovered(bluetoothGattConnected, BluetoothGatt.STATE_CONNECTED);
-        this.connected = bluetoothGattConnected.connect();
+        bluetoothGattConnected = device.connectGatt(this.getApplicationContext(), false, myBluetoothGattCallback);
     }
 
     public void disconnect() {
@@ -304,7 +313,7 @@ public class MainActivity extends AppCompatActivity {
             MY_LOGGER.info("We Do Nothing");
         }
         bluetoothGattConnected.disconnect();
-        this.connected = false;
+        bluetoothGattConnected = null;
     }
 
     public void close() {
@@ -332,4 +341,7 @@ public class MainActivity extends AppCompatActivity {
         return handler;
     }
 
+    public BluetoothGatt getBluetoothGattConnected() {
+        return bluetoothGattConnected;
+    }
 }
