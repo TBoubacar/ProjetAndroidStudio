@@ -12,6 +12,7 @@
         android:layout_height="wrap_content"
         android:minHeight="48dp"
         android:text="@string/bluetoothTypeName"
+        android:checked="true"
         tools:ignore="UseSwitchCompatOrMaterialXml" />
 
     <Button

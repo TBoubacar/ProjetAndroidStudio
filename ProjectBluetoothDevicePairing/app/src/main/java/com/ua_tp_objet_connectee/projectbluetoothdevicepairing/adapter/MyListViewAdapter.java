@@ -30,7 +30,7 @@ public class MyListViewAdapter extends ArrayAdapter<MyListViewItem> {
     //  TIP : TO AVOID HAVING DUPLICATE IN OUR BLUETOOTH LIST
     public boolean isStillOnMyItemList(MyListViewItem item) {
         for(MyListViewItem myItem : myListViewItemList) {
-            if (myItem.getName().equals(item.getName()) && myItem.getAddress().equals(item.getAddress())) {
+            if (myItem.getAddress().equals(item.getAddress())) {
                 return true;
             }
         }

@@ -48,7 +48,7 @@ public class MyBluetoothGattCallback extends android.bluetooth.BluetoothGattCall
 
             Message message = this.mainActivity.getHandler().obtainMessage();
             Bundle bundle = new Bundle();
-            bundle.putString("deviceName", null);
+            bundle.putString("deviceName", bluetoothGatt.getDevice().getName() + " (" + bluetoothGatt.getDevice().getAddress() + ")");
             bundle.putString("infoGattService", null);
             bundle.putString("disconnectedBtn", "false");
             message.setData(bundle);

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ProjectBluetoothDevicePairing</string>
+    <string name="app_name">Project Bluetooth Device Pairing</string>
     <string name="bluetoothItemName">Name of device</string>
     <string name="bluetoothItemAddress">Address of device</string>
     <string name="bluetoothUnactivatedBtn">CANCEL DISCOVERY</string>

@@ -55,6 +55,8 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("StaticFieldLeak")
     private static Button activatedBluetoothScanningBtn;
     private Button disconnect_btn;
+    @SuppressLint("UseSwitchCompatOrMaterialCode")
+    private Switch bluetoothType4_0;
 
 
     // Property : Use for stops scanning after 10 seconds
@@ -83,23 +85,18 @@ public class MainActivity extends AppCompatActivity {
         disconnect_btn = findViewById(R.id.disconnect_btn);
         deviceConnectedName = findViewById(R.id.deviceConnectedId);
         deviceConnectedInfo = findViewById(R.id.deviceConnectedInfoId);
-        @SuppressLint("UseSwitchCompatOrMaterialCode") Switch bluetoothType = findViewById(R.id.bluetoothTypeId);
+        bluetoothType4_0 = findViewById(R.id.bluetoothTypeId);
 
-        if (bluetoothType.isChecked()) {
-            activatedBluetoothScanningBtn.setOnClickListener(view -> actionToDoToStartScanningForBluetooth4_0());
-            unactivatedBluetoothScanningBtn.setOnClickListener(view -> actionToDoToStopScanningForBluetooth4_0());
-        } else {
-            activatedBluetoothScanningBtn.setOnClickListener(view -> actionToDoToStartScanningForBluetooth2_0());
-            unactivatedBluetoothScanningBtn.setOnClickListener(view -> actionToDoToStopScanningForBluetooth2_0());
-        }
+        activatedBluetoothScanningBtn.setOnClickListener(view -> actionToDoToStartScanningForBluetooth4_0());
+        unactivatedBluetoothScanningBtn.setOnClickListener(view -> actionToDoToStopScanningForBluetooth4_0());
         disconnect_btn.setOnClickListener(view -> actionToDoWhenDeviceIsDisconnected());
+        bluetoothType4_0.setOnClickListener(view -> actionToDoToWhenChangeTypeOfBluetooth());
 
         myListViewAdapter = new MyListViewAdapter(this);
         ListView bluetoothList = findViewById(R.id.bluetoothListView);
         bluetoothList.setAdapter(myListViewAdapter);
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         broadcastReceiver = new MyBroadCastReceiver();
-
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
@@ -163,15 +160,24 @@ public class MainActivity extends AppCompatActivity {
                 bluetoothInfo.setName(bundle.getString("deviceName"));
                 String disconnectedBtn = bundle.getString("disconnectedBtn");
                 String infoGattService = bundle.getString("infoGattService");
+
                 if (bluetoothGattConnected != null && bluetoothGattConnected.connect()) {
                     disconnect_btn.setEnabled(true);
                     deviceConnectedName.setText(bluetoothInfo.getName());
                     deviceConnectedInfo.setText(infoGattService);
+
+                    String msgInfo = "________Bluetooth Device '" + bluetoothInfo.getName() + "' Is Connected Successfully!________";
+                    MY_LOGGER.info(msgInfo);
+                    Toast.makeText(MainActivity.this, msgInfo, Toast.LENGTH_LONG).show();
                 }
                 if (disconnectedBtn != null && disconnectedBtn.equals("false")) {
                     disconnect_btn.setEnabled(false);
-                    deviceConnectedName.setText(bluetoothInfo.getName());
-                    deviceConnectedInfo.setText(infoGattService);
+                    deviceConnectedName.setText(null);
+                    deviceConnectedInfo.setText(null);
+
+                    String msgInfo = "________Connection To Device '" + bluetoothInfo.getName() + "' Is stopped!________";
+                    MY_LOGGER.info(msgInfo);
+                    Toast.makeText(MainActivity.this, msgInfo, Toast.LENGTH_LONG).show();
                 }
 
             }
@@ -184,24 +190,18 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        IntentFilter intentFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        IntentFilter intentFilterOfChange = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-        IntentFilter intentFilterOfPairing = new IntentFilter(BluetoothDevice.ACTION_PAIRING_REQUEST);
-        IntentFilter intentFilterOfStartDiscovery = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-        IntentFilter intentFilterOfFinishDiscovery = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        this.registerReceiver(broadcastReceiver, intentFilter);
-        this.registerReceiver(broadcastReceiver, intentFilterOfChange);
-        this.registerReceiver(broadcastReceiver, intentFilterOfPairing);
-        this.registerReceiver(broadcastReceiver, intentFilterOfStartDiscovery);
-        this.registerReceiver(broadcastReceiver, intentFilterOfFinishDiscovery);
-
         MY_LOGGER.info("________{onStart}________");
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        this.unregisterReceiver(this.broadcastReceiver);
+        //  TIP : To remove all reference if there are
+        if (this.broadcastReceiver != null) {
+            IntentFilter intentFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+            this.registerReceiver(broadcastReceiver, intentFilter);
+            this.unregisterReceiver(broadcastReceiver);
+        }
         MY_LOGGER.info("________{onStop}________");
     }
 
@@ -219,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
 
         //  Recovering the bluetooth start request on the device
         if (resultCode == RESULT_OK && requestCode == REQUEST_ENABLE_BT) {
-            String msg = "________User active bluetooth!________";
+            String msg = "________User Active Bluetooth In Device________";
             MY_LOGGER.info(msg);
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
             bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
@@ -232,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
         unactivatedBluetoothScanningBtn.setEnabled(true);
 
         if (bluetoothAdapter == null) {
-            String msg = "________The bluetooth device can not used!________";
+            String msg = "________Bluetooth Is Not Used________";
             MY_LOGGER.info(msg);
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
             return;
@@ -252,9 +252,9 @@ public class MainActivity extends AppCompatActivity {
                 MY_LOGGER.info("");
             }
             if (! bluetoothAdapter.isDiscovering()) {
-                String msg = "________The bluetooth device start discovering successfully!________";
+                String msg = "________Bluetooth Device Start Scanning With Bluetooth 2.0 Successfully!________";
                 MY_LOGGER.info(msg);
-                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
                 bluetoothAdapter.startDiscovery();
             }
         }
@@ -266,7 +266,7 @@ public class MainActivity extends AppCompatActivity {
         activatedBluetoothScanningBtn.setEnabled(true);
 
         if (bluetoothAdapter == null) {
-            String msg = "________The bluetooth device can not used!________";
+            String msg = "________Bluetooth Is Not Used________";
             MY_LOGGER.info(msg);
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
             return;
@@ -282,10 +282,36 @@ public class MainActivity extends AppCompatActivity {
             MY_LOGGER.info("");
         }
         if (bluetoothAdapter.isDiscovering()) {
-            String msg = "________The bluetooth device stop discovering successfully!________";
+            String msg = "________Bluetooth Device Stop Scanning With Bluetooth 2.0 Successfully!________";
             MY_LOGGER.info(msg);
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
             bluetoothAdapter.cancelDiscovery();
+        }
+    }
+
+    public void actionToDoToWhenChangeTypeOfBluetooth() {
+        if (bluetoothType4_0 != null) {
+            if (bluetoothType4_0.isChecked()) {
+                this.unregisterReceiver(this.broadcastReceiver);
+                activatedBluetoothScanningBtn.setOnClickListener(view -> actionToDoToStartScanningForBluetooth4_0());
+                unactivatedBluetoothScanningBtn.setOnClickListener(view -> actionToDoToStopScanningForBluetooth4_0());
+            } else {
+                IntentFilter intentFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+                IntentFilter intentFilterOfChange = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+                IntentFilter intentFilterOfPairing = new IntentFilter(BluetoothDevice.ACTION_PAIRING_REQUEST);
+                IntentFilter intentFilterOfStartDiscovery = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+                IntentFilter intentFilterOfFinishDiscovery = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+                this.registerReceiver(broadcastReceiver, intentFilter);
+                this.registerReceiver(broadcastReceiver, intentFilterOfChange);
+                this.registerReceiver(broadcastReceiver, intentFilterOfPairing);
+                this.registerReceiver(broadcastReceiver, intentFilterOfStartDiscovery);
+                this.registerReceiver(broadcastReceiver, intentFilterOfFinishDiscovery);
+
+                activatedBluetoothScanningBtn.setOnClickListener(view -> actionToDoToStartScanningForBluetooth2_0());
+                unactivatedBluetoothScanningBtn.setOnClickListener(view -> actionToDoToStopScanningForBluetooth2_0());
+            }
+        } else {
+            MY_LOGGER.warning("______________Bluetooth Type Is Not Defined!______________");
         }
     }
 
@@ -295,7 +321,7 @@ public class MainActivity extends AppCompatActivity {
         scanning = false;
 
         if (bluetoothAdapter == null) {
-            String msg = "________The bluetooth device can not used!________";
+            String msg = "________Bluetooth Is Not Used________";
             MY_LOGGER.info(msg);
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
             return;
@@ -309,7 +335,7 @@ public class MainActivity extends AppCompatActivity {
         activatedBluetoothScanningBtn.setEnabled(true);
 
         if (bluetoothAdapter == null) {
-            String msg = "________The bluetooth device can not used!________";
+            String msg = "________Bluetooth Is Not Used________";
             MY_LOGGER.info(msg);
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
             return;
@@ -329,7 +355,7 @@ public class MainActivity extends AppCompatActivity {
         deviceConnectedInfo.setText(null);
         this.disconnect();
 
-        String msg = "_________Bluetooth Device (" + this.bluetoothInfo.getName() + ") is disconnected successfully_________";
+        String msg = "_________Bluetooth Device '" + this.bluetoothInfo.getName() + "' Is Disconnected Successfully_________";
         MY_LOGGER.info(msg);
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
     }
@@ -374,16 +400,16 @@ public class MainActivity extends AppCompatActivity {
                 unactivatedBluetoothScanningBtn.setEnabled(true);
                 bluetoothLeScanner.startScan(leScanCallback);
 
-                String msg = "________The bluetooth device start scanning!________";
+                String msg = "________Bluetooth Device Start Scanning With Bluetooth 4.0________";
                 MY_LOGGER.info(msg);
-                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
             } else {
                 scanning = false;
                 bluetoothLeScanner.stopScan(leScanCallback);
 
-                String msg = "________The bluetooth device stop scanning!________";
+                String msg = "________Bluetooth Device Stop Scanning With Bluetooth 4.0________";
                 MY_LOGGER.info(msg);
-                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -398,14 +424,14 @@ public class MainActivity extends AppCompatActivity {
             //                                          int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
-            MY_LOGGER.info("We Do Nothing");
+            MY_LOGGER.info("");
         }
         bluetoothGattConnected = device.connectGatt(this.getApplicationContext(), false, myBluetoothGattCallback);
     }
 
     public void disconnect() {
         if (bluetoothGattConnected == null) {
-            MY_LOGGER.info("__________BluetoothDevice is not initialized for being disconnect__________");
+            MY_LOGGER.info("__________Bluetooth Device is not initialized for being disconnect__________");
             return;
         }
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
@@ -416,7 +442,7 @@ public class MainActivity extends AppCompatActivity {
             //                                          int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
-            MY_LOGGER.info("We Do Nothing");
+            MY_LOGGER.info("");
         }
         bluetoothGattConnected.disconnect();
         bluetoothGattConnected = null;
@@ -424,7 +450,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void close() {
         if (bluetoothGattConnected == null) {
-            String msg = "_________Impossible to close The GATT Server Connection_________";
+            String msg = "_________Impossible To Close The GATT Server Connection_________";
             MY_LOGGER.info(msg);
             return;
         }
@@ -436,7 +462,7 @@ public class MainActivity extends AppCompatActivity {
             //                                          int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
-            MY_LOGGER.info("We Do Nothing");
+            MY_LOGGER.info("");
         }
         bluetoothGattConnected.close();
         String msg = "_________The GATT Server Connection Is Closed_________";
@@ -482,26 +508,26 @@ public class MainActivity extends AppCompatActivity {
                     String name = device.getName();
                     String address = device.getAddress();
                     if (name == null) {
-                        name = "Null Device Name";
+                        name = "Null Device Name with bluetooth 2.0";
                     }
                     if (address == null) {
-                        address = "Null Device Address";
+                        address = "Null Device Address with bluetooth 2.0";
                     }
                     MainActivity.myListViewAdapter.addItem(new MyListViewItem(name, address));
                 }
             }
             if (BluetoothDevice.ACTION_PAIRING_REQUEST.equals(intent.getAction())) {
-                String msg = "________The bluetooth is pairing successfully!________";
+                String msg = "________Bluetooth Is Pairing Successfully With Bluetooth 2.0________";
                 MY_LOGGER.info(msg);
             }
             if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(intent.getAction())) {
-                String msg = "________The bluetooth device start scanning!________";
+                String msg = "________Bluetooth Device Start Scanning With Bluetooth 2.0________";
                 MY_LOGGER.info(msg);
                 MainActivity.activatedBluetoothScanningBtn.setEnabled(false);
                 MainActivity.unactivatedBluetoothScanningBtn.setEnabled(true);
             }
             if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(intent.getAction())) {
-                String msg = "________The bluetooth device stop scanning!________";
+                String msg = "________Bluetooth Device Stop Scanning Bluetooth 2.0________";
                 MY_LOGGER.info(msg);
                 MainActivity.activatedBluetoothScanningBtn.setEnabled(true);
                 MainActivity.unactivatedBluetoothScanningBtn.setEnabled(false);
